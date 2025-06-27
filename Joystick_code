@@ -1,0 +1,96 @@
+
+#########  Code joystick et  esp8266  #############
+
+const int pinJoystick = A0; // Axe X du joystick connecté à A0
+
+void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  int valeurJoystick = analogRead(pinJoystick);
+Serial.println(valeurJoystick);
+
+float pourcentage = valeurJoystick / 1023.0; // Convertir en % (0.0 à 1.0)
+String joy = String(pourcentage, 2);         // 2 chiffres après la virgule
+
+}
+
+
+
+
+
+
+
+      ############  Code joystick et  esp32 ##############
+
+const int pinJoystickX = 34; // Axe X
+const int pinJoystickY = 35; // Axe Y
+
+void setup() {
+  Serial.begin(115200);
+}
+
+void loop() {
+  int valeurX = analogRead(pinJoystickX);
+  int valeurY = analogRead(pinJoystickY);
+
+  float pourcentX = valeurX / 4095.0;
+  float pourcentY = valeurY / 4095.0;
+
+  String x = String(pourcentX, 2);
+  String y = String(pourcentY, 2);
+
+  Serial.print("X: ");
+  Serial.print(x);
+  Serial.print(" | Y: ");
+  Serial.println(y);
+
+  delay(300);
+}
+
+
+
+
+
+#########  Code joystick et  arduino uno   #########
+
+
+
+const int pinJoystickX = A0;
+const int pinJoystickY = A1;
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int valeurX = analogRead(pinJoystickX);
+  int valeurY = analogRead(pinJoystickY);
+
+  float pourcentX = valeurX / 1023.0;
+  float pourcentY = valeurY / 1023.0;
+
+  String x = String(pourcentX, 2);
+  String y = String(pourcentY, 2);
+
+  Serial.print("X: ");
+  Serial.print(x);
+  Serial.print(" | Y: ");
+  Serial.println(y);
+
+  delay(300);
+}
+
+
+
+
+NB : 
+Joystick VRx → A?
+Joystick VRy → A?
+GND → GND
+VCC → 3.3V
+
+
+
+
