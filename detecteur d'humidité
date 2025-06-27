@@ -1,0 +1,35 @@
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
+// Type de capteur et broche
+#define DHTPIN 2       // GPIO2 (D4 sur NodeMCU)
+#define DHTTYPE DHT11  // DHT11 ou DHT22
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+}
+
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); // En Celsius
+
+  // Vérifier si la lecture a échoué
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Erreur de lecture du capteur DHT11 !");
+    return;
+  }
+
+  Serial.print("Humidité: ");
+  Serial.print(h);
+  Serial.print(" %\t");
+
+  Serial.print("Température: ");
+  Serial.print(t);
+  Serial.println(" °C");
+
+  delay(2000); // Lire toutes les 2 secondes
+}
