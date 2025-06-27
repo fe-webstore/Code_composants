@@ -1,0 +1,60 @@
+
+/* ----------- Définitions des broches ----------- */
+
+##   ESP8266
+int btn1  =  D1 ;
+int btn2  =  D2 ;
+int btn3  =  D3 ;
+int btn4  =  D4 ;
+
+##  Arduino 
+int btn1 = 2;
+int btn2 = 3;
+int btn3 = 4;
+int btn4 = 5;
+
+##  ESP 32
+int btn1 = 12; // GPIO12
+int btn2 = 13; // GPIO13
+int btn3 = 14; // GPIO14
+int btn4 = 27; // GPIO27
+
+
+/* ----------- Variables globales ----------- */
+
+String  led1 = "";
+String  led2 = "";
+String  led3 = "";
+String  led4 = "";
+
+
+
+
+void setup() {
+  
+
+  pinMode(INPUT , btn1);
+  pinMode(INPUT , btn2);
+  pinMode(INPUT , btn3);
+  pinMode(INPUT , btn4);
+
+}
+
+
+
+/*----------------------------   section auto_update ----------------------*/
+
+
+digitalRead(btn1)==  HIGH  ?  led1  = "true"  : led1 = "false";
+digitalRead(btn2)==  HIGH ?  led2  = "true"  : led2 = "false";
+digitalRead(btn3)==  HIGH ?  led3  = "true"  : led3 = "false";
+digitalRead(btn4)==  HIGH  ?  led4  = "true"  : led4 = "false";
+
+
+
+ doc["Bulb1"]  = led1;
+  doc["Bulb2"]  = led2;
+  doc["Bulb3"]  = led3;
+  doc["Bulb4"]  = led4;
+
+
