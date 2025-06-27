@@ -1,0 +1,51 @@
+
+#####  code  detecteur  d'eau   / esp8266
+
+
+| Water Sensor Pin | Connect To ESP8266 |
+| ---------------- | ------------------ |
+| `+` (VCC)        | 3.3V               |
+| `-` (GND)        | GND                |
+| `S` (Signal)     | A0                 |
+
+
+
+#####  code  detecteur  d'eau   / esp32   
+
+
+| Capteur HW-038 | ESP32 GPIO recommandé    |
+| -------------- | ------------------------ |
+| `+`            | 3.3V                     |
+| `-`            | GND                      |
+| `S`            | GPIO 34 *(ou 35, 32...)* |
+
+
+
+#####    code  detecteur  d'eau /  Arduino
+
+
+| Capteur HW-038 | Arduino UNO |
+| -------------- | ----------- |
+| `+`            | 5V          |
+| `-`            | GND         |
+| `S`            | A0          |
+
+
+
+
+
+
+const int waterSensorPin = A0;  // Signal pin connected to A0
+
+
+
+  int waterValue = analogRead(waterSensorPin);  // Read analog value (0–1023)
+  Serial.print("Water Level: ");
+  Serial.println(waterValue);
+
+  float pourcentage = waterValue / 1023.0; // Convertir en % (0.0 à 1.0)
+  String water = String(pourcentage, 2);         // 2 chiffres après la virgule
+
+
+
+
