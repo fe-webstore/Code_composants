@@ -1,0 +1,26 @@
+
+
+
+const int pinAnalog = A0; // Entrée analogique
+const int pinDigital = D1; // Entrée digitale (GPIO5)
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(pinDigital, INPUT);
+}
+
+void loop() {
+  // Lire le niveau sonore analogique (0 à 1023)
+  int analogValue = analogRead(pinAnalog);
+
+  // Lire la sortie digitale (0 ou 1)
+  int digitalValue = digitalRead(pinDigital);
+
+  Serial.print("Niveau sonore (analogique) : ");
+  Serial.print(analogValue);
+
+  Serial.print(" | Seuil dépassé (digital) : ");
+  Serial.println(digitalValue == LOW ? "OUI" : "NON");
+
+  delay(500);
+}
