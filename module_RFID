@@ -1,0 +1,134 @@
+
+| **RC522** | **ESP32**          |
+| --------- | ------------------ |
+| SDA       | GPIO 5 (ou autre)  |
+| SCK       | GPIO 18            |
+| MOSI      | GPIO 23            |
+| MISO      | GPIO 19            |
+| RST       | GPIO 22 (ou autre) |
+| 3.3V      | 3.3V               |
+| GND       | GND                |
+#define SS_PIN 5   // SDA
+#define RST_PIN 22 // RST
+
+
+| **RC522** | **Arduino Uno/Nano** |
+| --------- | -------------------- |
+| SDA       | D10                  |
+| SCK       | D13                  |
+| MOSI      | D11                  |
+| MISO      | D12                  |
+| RST       | D9                   |
+| 3.3V      | 3.3V                 |
+| GND       | GND                  |
+#define SS_PIN 10   // SDA
+#define RST_PIN 9   // RST
+
+
+| RC522 | ESP8266 (NodeMCU) |
+| ----- | ----------------- |
+| SDA   | D2 (GPIO4)        |
+| SCK   | D5 (GPIO14)       |
+| MOSI  | D7 (GPIO13)       |
+| MISO  | D6 (GPIO12)       |
+| RST   | D1 (GPIO5)        |
+| 3.3V  | 3.3V              |
+| GND   | GND               |
+#define SS_PIN D2   // SDA
+#define RST_PIN D1  // RST
+
+
+
+
+
+
+
+
+
+
+
+// Inclure les bibliothèques nécessaires
+
+#include <MFRC522.h> // Bibliothèque pour le lecteur RFID
+
+
+
+/* ----------- RFID Configuration ----------- */
+#define SS_PIN D2
+#define RST_PIN D1
+MFRC522 rfid(SS_PIN, RST_PIN);
+byte uid_reference[] = {0x43, 0x30, 0x09, 0x35};
+
+/* ----------- Prototypes de fonctions ----------- */
+
+void readRFID(); // Fonction pour lire les cartes RFID
+
+void setup() {
+
+  SPI.begin(); // Init SPI bus
+  rfid.PCD_Init(); // Init RFID reader
+  Serial.println("Approche une carte RFID...");
+}
+
+
+
+/* ----------- Lire les cartes RFID ----------- */
+void readRFID() {
+  
+  if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  Serial.print("UID de la carte : ");
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    Serial.print(rfid.uid.uidByte[i] < 0x10 ? " 0" : " ");
+    Serial.print(rfid.uid.uidByte[i], HEX);
+  }
+  Serial.println();
+
+  // Vérifie si l'UID correspond à la référence
+  if (isAuthorized(rfid.uid.uidByte, rfid.uid.size)) {
+    Serial.println("✅ Carte autorisée !");
+    notif =  "Vous aver une nouvelle visite";
+   
+  } else {
+     notif =  "Tentative  d'intrusion";
+   
+    Serial.println("❌ Carte non reconnue.");
+  }
+
+  rfid.PICC_HaltA(); // Fin de lecture
+}
+
+// Compare l'UID scanné avec l'UID de référence
+bool isAuthorized(byte *uid, byte size) {
+  if (size != sizeof(uid_reference)) return false;
+
+  for (byte i = 0; i < size; i++) {
+    if (uid[i] != uid_reference[i]) return false;
+  }
+  return true;
+}
+
+/* ----------- Envoyer une mise à jour automatique ----------- */
+void sendAutoUpdate() {
+
+  readRFID(); // Lire les cartes RFID
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
