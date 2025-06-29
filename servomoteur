@@ -1,0 +1,43 @@
+// Inclure les bibliothèques nécessaires
+
+#include <Servo.h>
+
+
+/* ----------- Variables d'état globales ----------- */
+
+String notif = "false";
+String posi  = "";
+
+Servo myServo;  // Create a Servo object
+
+
+
+void setup() {
+
+  
+  myServo.attach(D4); // Attach the servo to pin D4 (GPIO2)
+
+
+}
+
+
+
+
+
+/* ----------- Traitement des commandes ----------- */
+
+
+  // Process the command here
+   if (lastCommand.startsWith("Slide")) {
+  // Exemple de commande : Slide120.0
+  String angleStr = lastCommand.substring(5); // Prend juste "120.0"
+  float angleFloat = angleStr.toFloat(); // Convertit en float
+  int angle = constrain((int)angleFloat, 0, 180); // Contrainte entre 0° et 180°
+  
+  myServo.write(angle);
+  double pp = angle/180 ;
+  posi  = String(pp) ;
+  statusMessage = "Servo à " + String(angle) + "°";
+ // Serial.println("🎯 Servo positionné à : " + String(angle));
+}
+
