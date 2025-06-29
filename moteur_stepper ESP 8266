@@ -1,0 +1,187 @@
+// Inclure les bibliothèques nécessaires
+#include <ESP8266WiFi.h> // Bibliothèque pour la fonctionnalité Wi-Fi de l'ESP8266
+#include <ESPAsyncWebServer.h> // Bibliothèque pour la fonctionnalité de serveur web asynchrone
+#include <ArduinoJson.h> // Bibliothèque pour la sérialisation et la désérialisation JSON
+#include <Stepper.h>
+
+/* ----------- Configuration Wi-Fi ----------- */
+const char* WIFI_SSID = "N1"; // SSID du réseau Wi-Fi
+const char* WIFI_PASSWORD = "yannyann"; // Mot de passe du réseau Wi-Fi
+
+/* ----------- Configuration WebSocket ----------- */
+AsyncWebServer server(80); // Créer un serveur web asynchrone sur le port 80
+AsyncWebSocket ws("/ws"); // Créer un point de terminaison WebSocket à "/ws"
+
+/* ----------- Variables d'état globales ----------- */
+String lastCommand = ""; // Stocke la dernière commande reçue
+String statusMessage = ""; // Stocke le message d'état à envoyer
+String notif = "false";
+String posi  = "";
+int currentPosition = 0;
+
+
+
+/* ----------- Minuterie pour la mise à jour automatique ----------- */
+unsigned long lastUpdateTime = 0; // Stocke le dernier temps de mise à jour
+const unsigned long updateInterval = 500; // Intervalle de mise à jour défini à 1 seconde (1000 millisecondes)
+
+
+// Définir le nombre de pas par révolution pour le moteur 28BYJ-48
+const int stepsPerRevolution = 2048;
+
+// Définir les pins utilisés
+Stepper myStepper(stepsPerRevolution, D1, D3, D2, D4); 
+// IN1 = D1, IN2 = D3, IN3 = D2, IN4 = D4
+
+/* ----------- Prototypes de fonctions ----------- */
+void initWiFi(); // Fonction pour initialiser la connexion Wi-Fi
+void initWebSocket(); // Fonction pour initialiser WebSocket
+void handleWebSocketCommand(); // Fonction pour gérer les commandes WebSocket
+void sendAutoUpdate(); // Fonction pour envoyer des mises à jour automatiques
+void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len); // Gestionnaire d'événements WebSocket
+void servo(); // Fonction pour lire les cartes RFID
+
+void setup() {
+  Serial.begin(115200); // Initialiser la communication série à 115200 bauds
+  initWiFi(); // Initialiser la connexion Wi-Fi
+  initWebSocket(); // Initialiser WebSocket
+  myStepper.setSpeed(10); // Vitesse du moteur (tr/min)
+  Serial.println("Moteur prêt !");
+}
+
+void loop() {
+
+  handleWebSocketCommand(); // Gérer les commandes WebSocket
+
+  // Mise à jour régulière toutes les 1 seconde
+  if (millis() - lastUpdateTime > updateInterval) {
+    sendAutoUpdate(); // Envoyer la mise à jour automatique
+    lastUpdateTime = millis(); // Mettre à jour le dernier temps de mise à jour
+  }
+
+   yield(); // Important pour éviter reset watchdog
+}
+
+
+
+/* ----------- Traitement des commandes ----------- */
+void handleWebSocketCommand() {
+  if (lastCommand.isEmpty()) return;
+
+  int divisor = lastCommand.toInt();
+
+  // Vérification de sécurité
+  if (divisor <= 0 || divisor > 2048) {
+    Serial.printf("⚠️ Diviseur invalide ou hors limite : %s\n", lastCommand.c_str());
+    lastCommand = "";
+    return;
+  }
+
+  // Calcul et mouvement
+  int stepsToMove = stepsPerRevolution / divisor;
+  myStepper.step(stepsToMove);
+  currentPosition += stepsToMove;
+  posi = String(currentPosition);
+
+  Serial.printf("✅ Commande: diviseur=%d → %d pas. Position actuelle = %d\n", divisor, stepsToMove, currentPosition);
+
+  lastCommand = "";
+}
+
+
+/* ----------- Envoyer une mise à jour automatique ----------- */
+void sendAutoUpdate() {
+
+  StaticJsonDocument<512> doc; // Créer un document JSON
+
+
+ doc["Ecran1"] = millis();
+  doc["Ecran2"] = statusMessage;
+  doc["Ecran3"] =  "val";
+    doc["Ecran4"] = "00";
+ 
+  
+
+  doc["Indicateur1"] = "posi";
+  doc["Indicateur2"] = 0.01;
+  doc["Indicateur3"] = 0.01;
+
+  doc["Bulb1"]  = "led1";
+  doc["Bulb2"]  = "led2";
+  doc["Bulb3"]  = "led3";
+  doc["Bulb4"]  = "led4";
+
+ 
+ 
+
+  // Ajouter les informations d'état de l'ESP au document JSON
+
+  doc["notif"] = notif;
+  doc["status"] = "auto-update";
+  doc["message"] = statusMessage;
+  doc["Wifi"] = WiFi.SSID();
+  doc["ip_address"] = WiFi.localIP().toString();
+  doc["mac_address"] = WiFi.macAddress();
+  doc["signal_strength"] = WiFi.RSSI();
+  doc["gateway_ip"] = WiFi.gatewayIP().toString();
+  doc["free_memory"] = ESP.getFreeHeap();
+  doc["flash_memory"] = ESP.getFlashChipSize();
+ 
+  String payload;
+  serializeJson(doc, payload); // Sérialiser le document JSON en chaîne de caractères
+  ws.textAll(payload); // Envoyer la chaîne JSON à tous les clients WebSocket
+ notif = "false"  ;
+
+
+ // Serial.println("🔄 Mise à jour automatique envoyée"); // Afficher le message de mise à jour envoyée
+}
+
+
+
+
+
+
+
+
+
+
+
+/* ----------- Initialisation Wi-Fi ----------- */
+void initWiFi() {
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // Se connecter au réseau Wi-Fi
+  Serial.print("Connexion au WiFi .."); // Afficher le message de connexion
+
+  while (WiFi.status() != WL_CONNECTED) { // Attendre la connexion
+    Serial.print('.'); // Afficher des points pendant la connexion
+    delay(1000); // Attendre 1 seconde
+  }
+
+  Serial.println(WiFi.localIP()); // Afficher l'adresse IP locale
+}
+
+/* ----------- Initialisation WebSocket ----------- */
+void initWebSocket() {
+  ws.onEvent(onWsEvent); // Définir le gestionnaire d'événements WebSocket
+  server.addHandler(&ws); // Ajouter le gestionnaire WebSocket au serveur
+  server.begin(); // Démarrer le serveur
+}
+
+/* ----------- Gestionnaire d'événements WebSocket ----------- */
+void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT: // Client connecté
+      Serial.printf("Client WebSocket #%u connecté depuis %s\n", client->id(), client->remoteIP().toString().c_str());
+      break;
+    case WS_EVT_DISCONNECT: // Client déconnecté
+      Serial.printf("Client WebSocket #%u déconnecté\n", client->id());
+      break;
+    case WS_EVT_DATA: // Données reçues
+      AwsFrameInfo* info = (AwsFrameInfo*)arg;
+      if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+        data[len] = 0; // Terminer les données par un caractère nul
+        lastCommand = (char*)data; // Stocker la commande reçue
+        Serial.printf("Commande reçue : %s\n", (char*)data); // Afficher la commande reçue
+      }
+      break;
+  }
+}
